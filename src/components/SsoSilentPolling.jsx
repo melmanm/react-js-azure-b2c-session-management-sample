@@ -2,10 +2,11 @@ import { Typography, Switch } from "@mui/material"
 import React, { useEffect, useState } from "react"
 import { silentRequest } from "../authConfig";
 import { useMsal } from '@azure/msal-react';
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
 
 export const SsoSilentPolling = () => {
     const pollingInterval = 5000; //ms
-    const initialText = `/authorize polling (${pollingInterval/1000}s)`;
+    const initialText = `/authorize polling (${pollingInterval / 1000}s)`;
     const waitingText = "refreshing...";
 
     const { instance } = useMsal();
@@ -26,11 +27,16 @@ export const SsoSilentPolling = () => {
             setText(initialText);
 
         } catch (e) {
-            setChecked(false);
-            instance.logoutRedirect({
-                account: instance.getActiveAccount(),
-                onRedirectNavigate: () => false
-            });
+            if (e instanceof InteractionRequiredAuthError) {
+                setChecked(false);
+                instance.logoutRedirect({
+                    account: instance.getActiveAccount(),
+                    onRedirectNavigate: () => false
+                });
+            }
+            else{
+                //handling of other error
+            }
         }
     }
 
@@ -47,7 +53,7 @@ export const SsoSilentPolling = () => {
                 {text}
             </Typography>
             <Switch
-                onChange={(event) => { setChecked(event.target.checked);}}
+                onChange={(event) => { setChecked(event.target.checked); }}
                 color="default"
                 variant="solid"
             />
